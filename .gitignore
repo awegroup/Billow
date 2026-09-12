@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Documentation build
+site/
+docs/_build/
+
+# Figures and result files the examples/ and validation/ scripts write
+results/
+figures/
+*.prof
+
+# LaTeX build artefacts (the .tex and .pdf are tracked, the rest is generated)
+docs/**/*.aux
+docs/**/*.fdb_latexmk
+docs/**/*.fls
+docs/**/*.out
+docs/**/*.toc
+docs/**/*.log
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+
+# Claude Code agent config (not version-controlled)
+/CLAUDE.md
+.claude/

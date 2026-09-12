@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev,examples]
+      - name: Unit tests
+        run: pytest -q --cov=src/billow --cov-report=term-missing
+      # The README and the package docstring both show a runnable first solve;
+      # this is what keeps them runnable.
+      - name: Doctests
+        run: pytest -q --doctest-modules src/billow
+      # The benchmarks assert convergence orders against closed-form and
+      # published solutions, so they are the check that the physics is right,
+      # not a smoke test. They are slow enough to keep off every push.
+      - name: Benchmarks
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: pytest -q -m slow

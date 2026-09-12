@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+authors:
+  - family-names: "Cayon"
+    given-names: "Oriol"
+    orcid: "https://orcid.org/0000-0002-2065-8673"
+    affiliation: "Delft University of Technology"
+title: "Billow: Minimum-energy structural modelling of soft, inflatable structures"
+abstract: >-
+  Billow solves for the static equilibrium of soft structures -- cables,
+  frictionless pulleys, geometrically exact Timoshenko beams, inflatable tube
+  constitutive laws and wrinkling membrane fabric -- by minimising one total
+  potential energy with IPOPT. Posing wrinkling and slack as states of the
+  minimiser, rather than branches a residual-form solve must be steered
+  through, is what makes the formulation appropriate for soft-kite structures.
+keywords:
+  - Structural Mechanics
+  - Energy Minimisation
+  - Wrinkling
+  - Tension Field Theory
+  - Geometrically Exact Beam
+  - Inflatable Structures
+  - Airborne Wind Energy
+  - Soft Kite
+version: 0.1.0
+license: Apache-2.0
+url: "https://github.com/awegroup/Billow"
+repository-code: "https://github.com/awegroup/Billow"
+date-released: "2026-09-12"
+doi: ""  # TODO: add Zenodo or equivalent DOI after first release

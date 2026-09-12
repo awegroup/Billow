@@ -1,0 +1,119 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "billow"
+version = "0.1.0"
+description = "Minimum-energy structural modelling of soft, inflatable structures: cables, pulleys, inflatable beams and wrinkling membranes"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+keywords = [
+  "structural-mechanics",
+  "energy-minimisation",
+  "wrinkling",
+  "tension-field-theory",
+  "geometrically-exact-beam",
+  "membrane",
+  "inflatable-structures",
+  "airborne-wind-energy",
+  "soft-kite",
+  "casadi",
+  "ipopt",
+]
+
+authors = [
+  {name = "Oriol Cayon", email = "oriol.cayon@gmail.com"},
+]
+maintainers = [
+  {name = "Oriol Cayon", email = "oriol.cayon@gmail.com"},
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Physics",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+# The whole point of the package is that this list is short. Adding to it is a
+# design decision, not a convenience -- see AGENTS.md, "Isolation".
+dependencies = [
+  "numpy",
+  "casadi",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "black",
+]
+# Everything the examples/ and validation/ scripts need to draw and to solve
+# the reference boundary-value problems. Not needed to use the solver.
+examples = [
+  "matplotlib",
+  "scipy",
+  "PyYAML",
+]
+# The external code the validation suite compares against. Optional on purpose:
+# every benchmark has a closed-form or published reference, and the comparison
+# runs are skipped when this is absent.
+compare = [
+  "kite_fem @ git+https://github.com/awegroup/kite_fem.git@main",
+]
+docs = [
+  # MkDocs 2.0 removes the plugin system outright, with no migration path, so
+  # the major version is pinned rather than tracked.
+  "mkdocs<2",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/awegroup/Billow"
+"Documentation" = "https://awegroup.github.io/Billow/"
+"Source" = "https://github.com/awegroup/Billow"
+"Issues" = "https://github.com/awegroup/Billow/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--strict-markers -m 'not slow'"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/conftest.py",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.black]
+line-length = 92
