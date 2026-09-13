@@ -92,6 +92,31 @@ Which is exactly right for a staggered loop, and exactly wrong for anything that
 tries to fold the flow into the same minimisation — a follower pressure is not
 conservative and has no potential.
 
+## What a coupled sweep looks like
+
+The reference adapter drives Billow's full model — inflatable tube beams and a
+wrinkling membrane canopy on the bridle's line system — through the actuation
+sweeps a kite is designed around: the depower tape, which pitches the wing about
+its bridle point, and the steering tapes, which shorten one side and lengthen the
+other.
+
+![LEI V3 solved shapes across depower and steering](img/coupled_sweep_shapes.png)
+
+*TU Delft LEI V3 at the centre of the wind window, one converged coupled state
+per panel. Top, across the span: the depower tape rotates every rib's chord, and
+the trimmed angle of attack falls from 11.8 to 4.8 degrees over the swept range,
+with the tether force following it. Bottom, from the front: steering rolls the
+wing and turns the trim. Canopy triangles carry the membrane's own regime —
+slack, wrinkled, taut — which is a state of the solution, not a post-processing
+choice: about 70% of this canopy is in a tension field at every setting.*
+
+Two things in that figure are worth an adapter author's attention. The angle of
+attack is not an input — it is where the moment balance lands, so the structure's
+stiffness sets it, and a stiffer or softer bridle moves the whole force curve.
+And the wrinkled fraction barely moves across the sweep: wrinkling is the
+canopy's normal working state here, which is why the relaxed energy is solved
+rather than a membrane that has to be kept taut.
+
 ## A minimal adapter
 
 ```python
