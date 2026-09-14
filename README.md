@@ -1,4 +1,9 @@
-# Billow
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/billow-lockup-dark.svg">
+    <img src="docs/logo/billow-lockup.svg" alt="Billow" height="96">
+  </picture>
+</h1>
 
 **Minimum-energy structural modelling of soft, inflatable structures.**
 
