@@ -701,7 +701,12 @@ def main() -> None:
     parser.add_argument("--case", choices=sorted(CASES), action="append")
     parser.add_argument("--show", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--no-title", action="store_true",
+                        help="drop figure titles (for a paper, where the caption carries them)")
     arguments = parser.parse_args()
+    if arguments.no_title:
+        import matplotlib.figure, matplotlib.axes
+        matplotlib.figure.Figure.suptitle = lambda self, *a, **k: None
 
     arguments.output_dir.mkdir(parents=True, exist_ok=True)
     for name in arguments.case or sorted(CASES):

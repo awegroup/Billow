@@ -326,7 +326,13 @@ def main() -> None:
                         help="omit kite_fem geometry from the projections")
     parser.add_argument("--figures", type=Path,
                         default=Path("results/hanging/figures"))
+    parser.add_argument("--no-title", action="store_true",
+                        help="drop figure titles (for a paper, where the caption carries them)")
     arguments = parser.parse_args()
+    if arguments.no_title:
+        import matplotlib.figure, matplotlib.axes
+        matplotlib.figure.Figure.suptitle = lambda self, *a, **k: None
+        matplotlib.axes.Axes.set_title = lambda self, *a, **k: None
 
     data = np.load(arguments.results, allow_pickle=True)
     cases = data["cases"]
