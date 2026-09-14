@@ -122,6 +122,7 @@ python examples/run_demo_cases.py --case cantilever   # large-deflection beam
 python examples/run_demo_cases.py --case sail         # batten-stiffened sail
 python examples/run_demo_cases.py --case canopy_model # spring net vs. wrinkling membrane
 python examples/run_demo_cases.py --case scaling      # cost against mesh size
+python examples/run_quasi_steady_tether.py           # a flying tether, and the catenary it rests on
 ```
 
 ## Why it scales

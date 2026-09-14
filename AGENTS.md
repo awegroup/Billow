@@ -102,11 +102,20 @@ tests/
                      junctions break mirror symmetry, mirror_frames restores it
   test_hanging_kite.py  the measured-kite model builds; the length extractor
                      reproduces the reference results exactly
+  test_catenary.py   a hanging chain of cables converges onto the analytic
+                     catenary at O(h^2); segment tensions match at midpoints
 
 examples/           runnable figures and cost studies -> results/demo/
   run_demo_cases.py           wrinkling / canopy_model / cantilever / sail /
                               scaling
   run_panel_cost.py, run_full_kite_cost.py, run_cost_comparison.py
+  run_quasi_steady_tether.py  the Tethers.jl quasi-steady examples: a kite
+                              tether at rest vs the analytic catenary, and one
+                              flying a circle; weight and the centrifugal term
+                              as potentials (the latter a one-node kernel
+                              defined in the example), drag as a one-step
+                              lagged dead load; the drag law stays in the
+                              example, never in the package
 
 validation/         external references -> results/validation/, results/hanging/
   run_validation_benchmarks.py  elastica / rollup / bend45 / inflatable,

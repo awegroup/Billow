@@ -62,6 +62,59 @@ Build and solve time against triangle count, which is the measurement behind the
 The iteration count barely moves. That is the signature of a well-posed
 minimisation: refining the mesh buys resolution, not difficulty.
 
+## `quasi_steady_tether` — a flying tether, and the catenary it rests on
+
+```sh
+python examples/run_quasi_steady_tether.py --case catenary
+python examples/run_quasi_steady_tether.py --case circular
+```
+
+The two quasi-steady examples of
+[Tethers.jl](https://github.com/ufechner7/Tethers.jl), with its default tether
+and its load model: a kite fixed at [100, 100, 800] m against the analytic
+catenary, and a kite flying one revolution of a 10° cone at 500 m while the
+tether is re-solved at every 0.02 s sample from the previous shape.
+
+The interesting part is where each quasi-steady load lives, because Billow
+minimises a potential and only a load that *has* one can be exact inside the
+solve:
+
+| load | representation | exact? |
+|---|---|---|
+| weight | dead nodal force | yes |
+| centrifugal term, `-m ω×(ω×r)` | one-node element kernel, `U = -½ m |ω×r|²`, with `ω` a live parameter | yes |
+| segment drag, `c |vₙ| vₙ` | dead load evaluated on the previous step's shape | lagged one step |
+
+Drag is velocity-dependent and non-conservative, so no potential has it as
+gradient, and it cannot be folded into the energy. Applied one step lagged,
+with no inner iteration, it costs 3e-3 N on a 57 N kite force and 1.1 mm on
+the nodes over the sweep, measured against a damped Newton solve of the force
+balance with the drag inside the residual. That Newton solve is the wrong tool
+for a taut chain: a 2 m transverse step on a 26 m segment adds 8 cm of stretch,
+so from a cold start its residual-norm line search collapses to a hundredth of
+a step, where IPOPT, with the energy as merit function, takes four iterations.
+
+Two things a port of this model has to get right, both found the hard way:
+
+* the cables are **two-way** springs. Tethers.jl lays each segment along
+  the accumulated force, `l = (|F|/EA + 1) Ls`, so its segments are taut by
+  construction and the two laws coincide on that branch, which a hanging
+  tether never leaves. The slack cut is dropped because on a catenary seed
+  every curved segment's chord is shorter than its arc, so the chain would
+  start with zero stiffness and IPOPT stops with
+  `Error_In_Step_Computation`;
+* the seed is the analytic catenary spaced by **arc length**, not horizontal
+  distance.
+
+`tests/test_catenary.py` is the closed-form check behind it: a hanging chain of
+cables converges onto the analytic catenary at O(h²), and its segment tensions
+onto the catenary tension at the segment midpoints.
+
+One warm step costs 4–7 ms here against 9 µs for the Julia shooting solver,
+which closes shape and loads in one three-unknown root-find. The port is not a
+faster tether; it is the same tether inside the formulation that also carries
+the bridle, the tube frame and the canopy.
+
 ## Cost studies
 
 ```sh
