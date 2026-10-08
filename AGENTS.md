@@ -101,7 +101,8 @@ tests/
   test_symmetry.py   pairing and equalities; frames transported through strut
                      junctions break mirror symmetry, mirror_frames restores it
   test_hanging_kite.py  the measured-kite model builds; the length extractor
-                     reproduces the reference results exactly
+                     reproduces the reference results exactly; the shape fit
+                     recovers markers placed on the model's own surface
   test_catenary.py   a hanging chain of cables converges onto the analytic
                      catenary at O(h^2); segment tensions match at midpoints
 
@@ -123,10 +124,17 @@ validation/         external references -> results/validation/, results/hanging/
                                 properties
   hanging_kite.py               the measured TU Delft V3, rebuilt as a Billow
                                 model from the reference assembled model
-  run_hanging_validation.py, run_hanging_shape_comparison.py,
-  run_hanging_stiffness_scan.py, plot_hanging_validation.py,
+  run_hanging_validation.py, run_hanging_stiffness_scan.py,
   make_hanging_report.py, run_mesh_requirement.py
-  data/hanging_validation/      vendored measurement data (MIT, see its README)
+  run_hanging_shape_comparison.py  3D shape vs the photogrammetry markers:
+                                every model (Billow, kite_fem, as built) by its
+                                own rigid fit, scored marker-to-SURFACE;
+                                writes docs/table_shape.tex
+  plot_hanging_validation.py    shape figures (shape_error, shape_overview,
+                                shape_<case>), the span/length figures kept
+                                for reproducibility, and 3D canopy renders
+  data/hanging_validation/      vendored measurement data (MIT, see its README);
+                                markers/ holds the 3D marker clouds
 
 docs/               mkdocs-material site + billow.tex, the full technical
                     document (formulation, elements, validation, demos, the

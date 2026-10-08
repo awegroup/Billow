@@ -8,6 +8,8 @@ physical measurement. None is a stored regression of Billow's own output.
 python validation/run_validation_benchmarks.py            # all beam cases
 python validation/run_validation_benchmarks.py --case rollup --show
 python validation/run_hanging_validation.py               # the measured kite
+python validation/run_hanging_shape_comparison.py         # its 3D shape vs the markers
+python validation/plot_hanging_validation.py              # the hanging-kite figures
 ```
 
 ## Large-rotation beam benchmarks
@@ -66,7 +68,7 @@ Two things that comparison required, both worth knowing before running one:
 | `test_inflatable.py` | the energy integrates the fitted moment; pure end-moment solves land on the fitted curve; collapse reporting |
 | `test_symmetry.py` | pairing and equalities; frames transported through junctions break mirror symmetry, `mirror_frames` restores it to roundoff |
 | `test_benchmarks.py` | roll-up vs the exact circle, Bathe & Bolourchi 45° bend |
-| `test_hanging_kite.py` | the measured-kite model builds, and the length extractor reproduces the reference results exactly |
+| `test_hanging_kite.py` | the measured-kite model builds, the length extractor reproduces the reference results exactly, and the shape fit recovers markers placed on the model's own surface |
 
 Tests assert against closed-form solutions and convergence orders, never against
 stored solver output. A test that pins today's numbers cannot tell you the
@@ -110,6 +112,30 @@ between the two answers attributable to the canopy formulation alone.
     - **Bridle lengths disagree with the thesis.**
     - **The reference beams converge far softer than their own law.**
 
-See the [technical document](billow.pdf) for the case-by-case geometry, the
-centre-load cases that neither code reproduces, and an honest account of how
-weakly twelve lengths constrain a model.
+### The shape, against 3D markers
+
+Twelve lengths reduce to six independent numbers, none of them a height or a
+chordwise measure, so they cannot decide a shape. Haanen's photogrammetry
+markers can: 60–76 three-dimensional points per case on the leading edge, the
+struts and the canopy, vendored under `validation/data/hanging_validation/markers/`.
+
+Every model gets its own rigid best fit to the markers — rotation and
+translation, never scale — and is scored by the RMS distance from each tube
+marker to the tube *surface*. The canopy markers take no part in the fit and
+are scored against the canopy surface as an independent check. The undeformed
+kite is scored the same way, as the null model.
+
+| mean over ten cases | point-to-surface RMS |
+|---|---|
+| as built (null model) | 403 mm |
+| Billow, fitted tube law | 314 mm |
+| `kite_fem`, published states | 242 mm |
+| Billow, tube law × 0.36 | 124 mm |
+
+On the tip-load cases every model, and the undeformed kite, lands within about
+10 mm of the others: those cases cannot tell models apart. The span and length
+comparison is still produced, so the published numbers can be reproduced.
+
+See the [technical document](billow.pdf) for the case-by-case shape figures,
+the centre-load cases that neither code reproduces, and the scaled tube law,
+which is reported as an identification and not adopted.

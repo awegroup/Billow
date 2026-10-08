@@ -925,7 +925,9 @@ on the worst free node.}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{summary.png}
-\caption{Span and mean relative error across the ten cases. Both codes
+\caption{Span and mean relative error across the ten cases, for Billow with
+its own tube law, Billow with the whole moment--curvature curve scaled by
+$0.36$ (Section~\ref{sec:hang-shape}), and \texttt{kite\_fem}. Both codes
 overstate the span wherever they solve the physical branch; the gap is widest
 where gravity alone sets the shape and narrowest where an imposed tip load
 dominates. The shaded centre-load cases are reproduced by neither code, and
@@ -959,7 +961,8 @@ account for the first and could not account for the second.}
 \caption{The solved shape under self-weight (top) and with the tips spread by
 \SI{5}{kg} (bottom), with the measured markers overlaid. The canopy is shaded
 by facet orientation, so the billow between struts and the sag of each bay are
-visible directly. Both are the $EI\times0.36$ solution.}
+visible directly. Both are the $EI\times0.36$ solution, with the markers
+placed by its own rigid fit (Section~\ref{sec:hang-shape}).}
 \end{figure}
 
 \begin{figure}[htbp]
@@ -974,83 +977,88 @@ tip.}
 \end{figure}
 
 \clearpage
-\subsubsection{Geometry, case by case}
+\subsubsection{Shape, case by case}
 
-The figures that follow show the inflatable structure --- leading edge and the
-ten struts --- in front, top and side projection, with the as-built shape for
-reference. The canopy is omitted for legibility; it carries little of the load
-in this case (Section~\ref{sec:hang-scope}).
+Each figure shows the inflatable structure --- leading edge and the ten struts
+--- in front, top and side projection, against Haanen's photogrammetry markers:
+filled on the tubes, hollow on the canopy. Every model is placed by \emph{its
+own} rigid best fit to the markers (Section~\ref{sec:hang-shape}) and then
+drawn in one common frame, so no model is shown in a frame chosen to suit
+another. The as-built shape is the dashed null model.
 
-Black dots are Haanen's photogrammetry markers, carried into the model frame by
-a rigid transform. For these figures the registration uses the \emph{leading
-edge alone}, so the two leading edges lie on top of one another and the
-remaining disagreement appears where it physically is --- in the struts and the
-canopy --- rather than being spread evenly over the structure by a global fit.
-The error table in Section~\ref{sec:hang-shape} uses its own per-model alignment over
-all curves, which is the fair one for scoring; these overlays are for reading,
-not for measuring. The markers stop short of the tips because the outermost bays
-are not instrumented.
+The lower panel says \emph{where} each model is wrong: the distance from every
+marker to each model's surface, against arc length along the measured leading
+edge. Arc length rather than span, because on the gravity cases the measured
+tips curl inward past where any model reaches, and spanwise position would fold
+back on itself there. Strut markers stand in a column where their strut meets
+the leading edge, canopy markers at the nearest leading-edge marker. The
+markers stop short of the tips because the outermost bays are not instrumented.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_1.png}
+\includegraphics[width=\textwidth]{shape_1.png}
 \caption{Load case 1.}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_2.png}
+\includegraphics[width=\textwidth]{shape_2.png}
 \caption{Load case 2.}
 \end{figure}
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{geometry_3.png}
-\caption{Load case 3.}
-\end{figure}
 \clearpage
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_4.png}
-\caption{Load case 4.}
+\includegraphics[width=\textwidth]{shape_3.png}
+\caption{Load case 3.}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_5.png}
+\includegraphics[width=\textwidth]{shape_4.png}
+\caption{Load case 4.}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{shape_5.png}
 \caption{Load case 5.}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_6.png}
+\includegraphics[width=\textwidth]{shape_6.png}
 \caption{Load case 6.}
 \end{figure}
+
 \clearpage
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_7.png}
+\includegraphics[width=\textwidth]{shape_7.png}
 \caption{Load case 7.}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_8.png}
+\includegraphics[width=\textwidth]{shape_8.png}
 \caption{Load case 8.}
 \end{figure}
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{geometry_9.png}
-\caption{Load case 9.}
-\end{figure}
 \clearpage
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{geometry_10.png}
+\includegraphics[width=\textwidth]{shape_9.png}
+\caption{Load case 9.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{shape_10.png}
 \caption{Load case 10.}
 \end{figure}
 
@@ -1294,22 +1302,24 @@ ceiling on what any validation against this file can claim, including this one.
 The information exists. The measurement was stereoscopic, giving full
 three-dimensional marker positions, and the thesis plots measured geometry
 against model geometry in top, side and front projection for all ten load cases
-(its Figure~7.2). Only the twelve scalars were published.
+(its Figure~7.2). Only the twelve scalars were published with the model.
 
-\paragraph{The single most valuable thing to obtain} is therefore the 3D marker
-coordinates behind Figure~7.2. They would turn this from a comparison of three
-effective scalars into a comparison of shapes, and would immediately settle
-questions the present data cannot touch --- among them whether Billow's wing is
-uniformly too open or wrong in a particular region, and whether the centre-load
-cases fail in the way the folded branch suggests.
+\paragraph{The 3D marker coordinates} behind that figure turn this from a
+comparison of three effective scalars into a comparison of shapes. They are
+published in Haanen's repository, vendored here, and used in
+Section~\ref{sec:hang-shape}; the length comparison above is kept so that the
+published numbers can be reproduced, not because it can decide a shape.
 
 \subsection{The proper test: 3D shape against the markers}
 \label{sec:hang-shape}
 
 Everything above is scored on twelve numbers that reduce to six independent
 ones. Haanen's marker clouds --- 62 to 76 three-dimensional points per load case
-on the leading edge, the eight struts and the canopy --- allow the question that
-data cannot answer: is the \emph{shape} right?
+on the leading edge, the eight struts and the canopy, vendored under
+\code{validation/data/hanging\_validation/markers/} (MIT) --- allow the question
+that data cannot answer: is the \emph{shape} right? Every model is scored the
+same way: Billow, \texttt{kite\_fem}'s published states, and the undeformed
+as-built geometry as the null model.
 
 \paragraph{Method.} Markers are in the stereo rig's frame, so a \emph{rigid}
 transform is needed --- rotation and translation only, never scale, since scale
@@ -1318,35 +1328,74 @@ fitting: the measured struts are ordered across the span with their first marker
 at the leading edge, so their roots pair with the model's eight strut
 leading-edge nodes, giving eight anchors for a Kabsch fit. Both spanwise
 orderings are tried, because the kite is near-symmetric and the marker numbering
-direction is undocumented. The fit is then refined by ICP against the model
-curves, so no marker is assumed to sit on a node. Reported errors are
-point-to-\emph{surface}: the markers are stuck to the outside of the tubes while
-the model polyline is the tube axis, and ignoring that radius --- 55 to
-\SI{100}{mm} here --- would put a systematic offset into every case.
+direction is undocumented. Each model gets its own fit; none is scored in a
+frame chosen for another. The fit is refined by ICP against the model tube
+axes, so no marker is assumed to sit on a node, and finished by Gauss--Newton,
+with a backtracking line search, on the quantity that is reported: the distance
+from each marker to the tube \emph{surface}. The markers are stuck to the
+outside of the tubes while the model polyline is the tube axis, and ignoring
+that radius --- 55 to \SI{100}{mm} here --- would put a systematic offset into
+every case. Both stages are needed. Fitting to the axis alone biases every
+model toward the markers by up to a radius, because the markers all sit on one
+side; fitting to the surface from a rough start can lock onto the far side of a
+tube, a diameter away, where the distance is zero again. A committed test
+places synthetic markers on the model's own surface, moves them by an arbitrary
+rigid motion, and requires the fit to recover them to under a millimetre.
+
+The canopy markers take no part in the fit. They are scored afterwards against
+the triangulated canopy surface, as an independent check on the alignment and
+on the fabric.
 
 \begin{table}[htbp]
 \centering
-\caption{Point-to-surface RMS between the solved shape and the photogrammetry
-markers. ``As built'' is the undeformed geometry, included as the null model:
-anything not beating it has explained nothing.}
+\caption{Point-to-surface RMS (mm) between each solved shape and the
+photogrammetry tube markers, each model under its own rigid fit. ``As built''
+is the undeformed geometry, included as the null model: anything not beating
+it has explained nothing. $^{\dagger}$ centre-load cases. Generated by
+\code{run\_hanging\_shape\_comparison.py}.}
+\label{tab:hang-shape}
 \input{table_shape}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{shape_error.png}
+\caption{Left: Table~\ref{tab:hang-shape} per load case. Right: the same
+distance pooled over all ten cases and split by marker group; the canopy
+markers are not used in the fit, so their column is an independent check.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{shape_overview.png}
+\caption{Front view of all ten cases, every model under its own rigid fit to
+the markers. Shaded panels are the centre-load cases.}
+\end{figure}
+
 \paragraph{The scaled model reaches the measurement floor.} On the two cases
 that load the tubes, the error falls from \SI{480}{} to \SI{100}{mm} and from
-\SI{387}{} to \SI{101}{mm} --- onto the same $\sim$\SI{100}{mm} the tip cases
+\SI{387}{} to \SI{100}{mm} --- onto the same $\sim$\SI{100}{mm} the tip cases
 sit at, which is the marker placement and alignment floor. Across all ten the
-mean falls from \SI{315}{} to \SI{125}{mm}, against \SI{404}{mm} for doing
-nothing. That the factor identified from two scalar spans also fixes the full
+mean falls from \SI{314}{} to \SI{124}{mm}, against \SI{403}{mm} for doing
+nothing and \SI{242}{mm} for \texttt{kite\_fem}. That the factor identified from two scalar spans also fixes the full
 three-dimensional shape, including the centre-load cases it was not fitted on,
 is the strongest evidence in this section that it is a real property of the tube
 law rather than a number absorbing error.
 
+\paragraph{\texttt{kite\_fem} on the same footing.} Scored by the identical
+procedure, \texttt{kite\_fem} sits between the two Billow runs on the gravity
+cases (\SI{171}{} and \SI{159}{mm}), consistent with its beams converging to a
+fraction of their own law. On the centre-load cases it is barely better than
+the null model (\SIrange{347}{465}{mm} against \SIrange{515}{654}{mm}), which
+is its author's own diagnosis seen in three dimensions: a beam element cannot
+follow the local cross-section collapse under a concentrated load.
+
 \paragraph{The tip-load cases are confirmed uninformative.} Their errors are
-\SI{141}{}, \SI{102}{}, \SI{114}{}, \SI{101}{mm} for the \emph{undeformed}
-geometry against \SI{144}{}, \SI{101}{}, \SI{119}{}, \SI{102}{mm} for the
-unscaled model and \SI{136}{}, \SI{92}{}, \SI{111}{}, \SI{94}{mm} for the scaled
-one --- all within about \SI{10}{mm} of each other. Doing nothing scores as well
+\SI{139}{}, \SI{99}{}, \SI{111}{}, \SI{98}{mm} for the \emph{undeformed}
+geometry against \SI{142}{}, \SI{98}{}, \SI{116}{}, \SI{99}{mm} for the
+unscaled model, \SI{134}{}, \SI{89}{}, \SI{108}{}, \SI{91}{mm} for the scaled
+one and \SI{138}{}, \SI{93}{}, \SI{111}{}, \SI{96}{mm} for \texttt{kite\_fem}
+--- all within about \SI{10}{mm} of each other. Doing nothing scores as well
 as either model. This is the same conclusion the bridle-tension argument reached
 in Section~\ref{sec:hang-scope}, now established directly in three dimensions rather than inferred,
 and it is why the six-case and ten-case means elsewhere in this section should be
@@ -1366,7 +1415,8 @@ read with care.
       building the comparison. The 3D markers confirm this directly: on the
       tip-load cases the undeformed geometry scores as well as either model.
 \item Against the 3D markers, $\lambda = 0.36$ takes the mean point-to-surface
-      error from \SI{315}{} to \SI{125}{mm} (null model \SI{404}{mm}), and
+      error from \SI{314}{} to \SI{124}{mm} (null model \SI{403}{mm},
+      \texttt{kite\_fem} \SI{242}{mm}), and
       brings the two tube-loaded cases onto the $\sim$\SI{100}{mm} measurement
       floor --- having been identified on two scalar spans, not on the shape.
 \item Post-collapse behaviour is unmodelled in all three codes and does not
@@ -1807,7 +1857,7 @@ Single-bay comparison & \code{python scripts/structural/run\_panel\_cost.py}\\
 Full-kite table & \code{python scripts/structural/run\_full\_kite\_cost.py}\\
 Hanging-kite results, Tables & \code{python scripts/structural/run\_hanging\_validation.py}\\
 Stiffness scan & \code{python scripts/structural/run\_hanging\_stiffness\_scan.py}\\
-3D marker comparison & \code{python scripts/structural/run\_hanging\_shape\_comparison.py}\\
+3D shape comparison & \code{python validation/run\_hanging\_shape\_comparison.py}\\
 Hanging figures & \code{python scripts/structural/plot\_hanging\_validation.py}\\
 Generated \code{.tex} tables & \code{python scripts/structural/make\_hanging\_report.py}\\
 Test suite & \code{pytest tests/structural/}\\

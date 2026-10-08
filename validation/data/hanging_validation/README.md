@@ -27,6 +27,17 @@ the data. The rows are perfectly symmetric left-to-right to four decimals
 (`La` ≡ `Li`, `LcsTL` ≡ `LcsTR`), so they have been mirrored or
 port/starboard-averaged.
 
+`markers/` holds the three-dimensional marker clouds behind those lengths,
+one CSV per load case (`group, idx_in_group, x, y, z`, metres, stereo-rig
+frame), vendored from
+[`pimjhaanen/photogrammetry_thesis`](https://github.com/pimjhaanen/photogrammetry_thesis)
+(MIT, © 2026 PJ Haanen, licence in `markers/LICENSE`), commit `b20ce8c`,
+`Photogrammetry/static_experiments/static_test_output/`. Files are byte-for-byte
+copies. Groups are `LE` (leading edge), `strut0`…`strut7` (ordered across the
+span, first marker at the leading edge) and `CAN` (canopy). Case order is
+`P1_S, P1_PL1, P1_PL2, P1_TL1, P1_TL2, P2_S, …`: pressure 1 or 2, then gravity
+only, centre load 1 or 2, tip load 1 or 2.
+
 `kite_fem_states/` holds its ten solved configurations. They are vendored so
 the comparison figures can show its deformed geometry, and so
 `tests/structural/test_hanging_kite.py` can assert that our length extractor
@@ -104,3 +115,11 @@ python validation/run_hanging_validation.py
 builds the same model in `billow` (Billow), replacing only the
 canopy — 721 springs become 392 wrinkling membrane triangles on the identical
 grid — and scores both against `measured_lengths.csv`.
+
+```
+python validation/run_hanging_shape_comparison.py
+python validation/plot_hanging_validation.py
+```
+
+scores the solved shapes, `kite_fem`'s states and the undeformed kite against
+the 3D markers, and draws the figures.

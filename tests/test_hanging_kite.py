@@ -247,3 +247,67 @@ def test_thesis_bridle_leaves_br5_alone_by_default(reference):
     opted_in = hanging_kite.apply_thesis_bridle(reference, include_br5=True)
     assert np.isclose(default.spring_rest, stored).sum() == 2
     assert np.isclose(opted_in.spring_rest, corrected_value).sum() == 2
+
+
+# --------------------------------------------------------------------------
+# 3D shape scoring against the markers
+# --------------------------------------------------------------------------
+
+
+def _rotation(axis, angle):
+    axis = np.asarray(axis, dtype=float) / np.linalg.norm(axis)
+    k = np.array([[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]],
+                  [-axis[1], axis[0], 0]])
+    return np.eye(3) + np.sin(angle) * k + (1 - np.cos(angle)) * k @ k
+
+
+def test_mesh_distance_matches_a_flat_plate():
+    shape = pytest.importorskip("run_hanging_shape_comparison")
+    faces = np.array([[[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                      [[0, 0, 0], [1, 1, 0], [0, 1, 0]]], dtype=float)
+    points = np.array([[0.3, 0.6, 0.25],      # above the interior
+                       [2.0, 0.5, 0.0],       # beside an edge, in plane
+                       [2.0, 2.0, 1.0]])      # off a corner
+    assert shape.distance_to_mesh(points, faces) == pytest.approx(
+        [0.25, 1.0, np.sqrt(3.0)])
+
+
+def test_shape_score_is_rigid_invariant_and_zero_on_its_own_surface(reference):
+    """Markers placed on the model's own tube surface score zero, wherever the
+    rig frame puts them -- and the fit never scales, so the metric can only be
+    reduced by getting the shape right."""
+    shape = pytest.importorskip("run_hanging_shape_comparison")
+    grid = hanging_kite.canopy_grid(reference.nodes)
+    radii = shape.curve_radii(reference, grid)
+    curves = shape.model_curves(reference.nodes, grid)
+
+    up = np.array([0.0, 0.0, 1.0])
+    markers = {}
+    for name, curve in curves.items():
+        midpoints = 0.5 * (curve[:-1] + curve[1:])
+        tangent = curve[1:] - curve[:-1]
+        normal = np.cross(tangent, up)
+        normal /= np.linalg.norm(normal, axis=1, keepdims=True)
+        radius = 0.5 * (radii[name][:-1] + radii[name][1:])
+        markers[name] = midpoints + radius[:, None] * normal
+    faces = reference.nodes[hanging_kite.canopy_triangles(grid)]
+    markers["CAN"] = faces[::40].mean(axis=1)
+
+    rotation = _rotation([0.3, -1.0, 0.4], 2.1)
+    translation = np.array([4.0, -7.0, 1.5])
+    moved = {g: p @ rotation.T + translation for g, p in markers.items()}
+
+    fit = shape.fit_shape(reference.nodes, grid, moved, radii)
+    assert fit.rms() < 1e-3
+    assert np.abs(fit.distance["canopy"]).max() < 1e-6
+    assert np.allclose(fit.rotation @ fit.rotation.T, np.eye(3))
+    assert np.linalg.det(fit.rotation) == pytest.approx(1.0)
+    assert fit.to_model(moved["LE"]) == pytest.approx(markers["LE"], abs=1e-6)
+
+
+def test_vendored_markers_cover_every_case():
+    shape = pytest.importorskip("run_hanging_shape_comparison")
+    for stem in shape.CASE_FILES:
+        markers = shape.load_markers(stem)
+        assert len(markers["LE"]) >= 20
+        assert sum(k.startswith("strut") for k in markers) == 8
