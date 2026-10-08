@@ -514,7 +514,7 @@ def case_bend45():
     offsets = np.arange(3)
     width = 0.22
 
-    for index, (name, marker) in enumerate(MARKERS.items()):
+    for index, name in enumerate(SOLVERS):
         tip = np.array(results[name]["tip"][-1], dtype=float)
         left.bar(offsets + (index - 0.5) * width, tip, width,
                  color=COLOURS[name], label=f"{name} ({element_counts[-1]} el)")
