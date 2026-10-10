@@ -7,6 +7,7 @@
 | `TimoshenkoBeamKernel` | 2 | both | `rest_length`, `ea`/`ga_2`/`ga_3`/`gj`/`ei_2`/`ei_3`, `gamma_0`, `omega_0` |
 | `InflatableBeamKernel` | 2 | both | tube law, diameter, pressure |
 | `MembraneKernel` | 3 | no | `area`, `thickness`, `youngs_modulus`, `poisson_ratio`, `d0inv_*` |
+| `PressureKernel` | 3 | no | `pressure` — one scalar per set |
 
 ## Cable
 
@@ -127,6 +128,84 @@ reported by `membrane_regimes` as `SLACK`, `WRINKLED` or `TAUT`.
 
     **Do not set it to zero on a canopy that can go slack.**
 
+## Uniform pressure
+
+A ram-air cell, a single skin pinned along its edge, or a tube modelled with
+its own fabric is loaded by a uniform gauge pressure $p$ inside the same
+minimisation. The work of a uniform pressure is $p$ times the swept volume, so
+its potential is
+
+$$
+U = -p\,V, \qquad V = \sum_t \tfrac16\, \mathbf{x}_1\cdot(\mathbf{x}_2\times\mathbf{x}_3),
+$$
+
+the enclosed volume as a sum of signed cone volumes from the origin, one
+three-node translation-only element per triangle. For a node whose fan of
+triangles is closed, $\partial V/\partial \mathbf{x}_i$ is the vector area
+of the ring polygon around it, $\tfrac13 \sum_t A_t \mathbf{n}_t$ — exactly
+the force a lumped $p A \mathbf{n}/3$ scheme applies, at every interior node.
+Positive $p$ inflates an **outward-wound** surface; `build_pressure_elements`
+checks that the surface is closed, consistently wound and encloses a positive
+volume, and names the first offending edges when it is not.
+
+`pressure_forces(positions, element_set)` reads the nodal pressure forces off
+the kernel's own gradient, and on a closed surface equals
+`lumped_pressure_forces` to roundoff, with zero resultant and zero moment.
+
+!!! note "Open surfaces: pin the rim"
+    The cone volumes depend on where the origin is; their sum over a closed
+    surface does not, and neither does the gradient at any node whose fan is
+    closed. An open surface is therefore also a genuine potential provided every
+    rim node is pinned — only the rim carries origin-dependent terms, and a
+    pinned node's gradient never enters the equilibrium. `closed=False` relaxes
+    the closure check; pin `surface_boundary_nodes(triangles)`.
+
+!!! danger "One scalar per set — a per-triangle pressure is not a potential"
+    The exactness at interior nodes holds only for a pressure that is uniform
+    over the node's fan. With a per-triangle $p_t$ the sum $-\sum_t p_t V_t$
+    is no longer translation-invariant (measured: 1.3e-13 N change under a
+    translation for uniform $p$, 20.9 N for a per-triangle field), so its
+    gradient is not a pressure force at all. `pressure` therefore stays a
+    parameter column — ramp it on one solver build with
+    `ElementSet.with_param_column("pressure", ...)` — but the builder takes one
+    scalar, and `pressure_forces` refuses a column that is not constant over
+    each connected piece of the surface. Nothing inside the solve checks it.
+
+    Several cells at different pressures are several sets, one closed surface
+    each. A rib shared by two cells appears in both with opposite windings and
+    carries the net $p_\text{left} - p_\text{right}$; at equal pressure an
+    internal rib carries nothing and belongs in no pressure set at all.
+
+!!! danger "Never route an aerodynamic pressure distribution through this kernel"
+    A flow-dependent $\Delta p$ over a single skin is non-uniform and has no
+    potential. The isolation-consistent route is
+    `lumped_pressure_forces(positions, triangles, pressure_per_triangle)`, a
+    NumPy helper that lumps $p_t A_t \mathbf{n}_t / 3$ at the nodes, applied by
+    the adapter as a dead load lagged by one coupling step — the same pattern
+    as drag in `examples/run_quasi_steady_tether.py`. For uniform $p$ the lagged
+    iteration and the potential share their fixed point (`test_pressure.py`).
+
+Three more things to carry into a solve:
+
+- **The mirrored half of a symmetric canopy must be wound in reversed order.**
+  The triple product is odd under a reflection, so the "even in each strain"
+  argument of the [symmetry constraints](formulation.md#symmetry) does not
+  apply; the orientation check catches a half copied without the flip.
+- **Pressure is not in the solver's load scaling.** The acceptance tolerance
+  scales with the external `forces` only, so a pressure-only solve is judged
+  at the absolute `force_tolerance` against nodal pressure forces of order
+  $pA/n_\text{nodes}$. Pass a `force_tolerance` scaled to that — especially
+  with `move_limit`, where the residual alone decides.
+- **`StructuralSolution.strain_energy` includes $-pV$.** It is the total
+  element energy; an inflated balloon reports a large negative number.
+
+The SVK membrane and its relaxed form both grow like $\lambda^4$ in a uniform
+stretch while $pV$ grows like $\lambda^3$, so the energy of an inflated balloon
+is bounded below and a one-shot solve is well posed. The limit-point
+instability of a neo-Hookean balloon is real physics this constitutive law
+cannot show. A fixed-mass gas law, $-p_0 V_0 \ln(V/V_0)$, is a function of the
+global volume rather than of one element and is not provided.
+
 ## Adding a kernel
 
 A kernel is a pure function of one element's DOF, its frames and its parameter
@@ -135,7 +214,9 @@ row. It must:
 - close over nothing element-specific — everything arrives through `params`;
 - build only SX, so it can be compiled once and mapped;
 - be **even in each strain component**, if the model it goes into will ever use
-  the mirror-symmetry constraints (see [Formulation](formulation.md#symmetry));
+  the mirror-symmetry constraints (see [Formulation](formulation.md#symmetry))
+  — or, like the pressure kernel, be odd in a way the mesh can absorb by
+  reversing the mirrored winding;
 - declare `nodes_per_element`, `param_names` and whether it needs rotational
   DOF.
 

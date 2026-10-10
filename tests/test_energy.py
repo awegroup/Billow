@@ -24,7 +24,9 @@ from billow.elements import (
     build_beam_elements,
     build_cable_elements,
     build_membrane_elements,
+    build_pressure_elements,
     build_pulley_elements,
+    enclosed_volume,
     initial_frames_from_polyline,
 )
 from billow.energy import PotentialEnergy
@@ -65,9 +67,17 @@ def mixed_model(seed: int = 0) -> StructuralModel:
     )
     pulleys = build_pulley_elements([[1, 10, 6]], [1.4], [2.5e4], name="pulleys")
 
+    # A closed tetrahedron over four of the random nodes, under a uniform
+    # pressure. Its outward winding depends on where the seed put the nodes,
+    # so it is wound per seed from the sign of the enclosed volume.
+    tetrahedron = np.array([[0, 1, 3], [0, 3, 5], [0, 5, 1], [1, 5, 3]])
+    if enclosed_volume(nodes, tetrahedron) < 0.0:
+        tetrahedron = tetrahedron[:, [0, 2, 1]]
+    pressure = build_pressure_elements(nodes, tetrahedron, 1.0e4, name="pressure")
+
     return StructuralModel(
         nodes,
-        [spar, canopy, cables, pulleys],
+        [spar, canopy, cables, pulleys, pressure],
         node_frames=frames,
         fixed_translation_nodes=[7],
         fixed_rotation_nodes=[7],
@@ -135,6 +145,8 @@ def test_mapped_assembly_matches_an_element_by_element_sum(seed):
     )
     mapped = float(energy.total_energy(unknowns, parameters))
     assert mapped == pytest.approx(naive_energy(model, unknowns, frames_flat), rel=1e-9)
+    # The pressure set contributes -pV, negative, but the membrane stores
+    # 1e5-1e6 J against |pV| <= 113 J at 1e4 Pa, so the total stays positive.
     assert mapped > 0.0, "the perturbed configuration should store energy"
 
 

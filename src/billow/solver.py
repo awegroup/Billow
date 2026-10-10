@@ -79,6 +79,10 @@ class StructuralSolution:
     ipopt_success: bool
     status: str
     iterations: int  # summed over every frame update
+    #: Total element energy [J]: every element set summed, INCLUDING load-like
+    #: kernels (the pressure potential ``-pV``, a centrifugal potential), so it
+    #: is not the elastic energy alone -- an inflated balloon reports a large
+    #: negative number. External work and the anchor are excluded.
     strain_energy: float
     internal_forces: Array
     internal_moments: Array

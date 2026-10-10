@@ -514,6 +514,72 @@ fabric a definite tangent. It is also not a fiction: real fabric has some
 compressive and bending resistance. Do not set $r=0$ on a canopy that can go
 slack.
 
+\subsection{Uniform pressure}
+
+A ram-air cell, a single skin pinned along its edge, or a tube modelled with
+its own fabric is loaded by a uniform gauge pressure $p$ inside the same
+minimisation. The work of a uniform pressure is $p$ times the swept volume, so
+its potential is
+\begin{equation}
+  U = -p\,V, \qquad
+  V = \sum_t \tfrac{1}{6}\,\mathbf{x}_1\cdot(\mathbf{x}_2\times\mathbf{x}_3),
+\end{equation}
+the enclosed volume written as a sum of signed cone volumes from the origin,
+one translation-only three-node element per triangle, mapped like any other
+kernel. For a node whose fan of triangles is closed, $\partial V/\partial
+\mathbf{x}_i$ is the vector area of the ring polygon around it,
+$\tfrac{1}{3}\sum_t A_t\mathbf{n}_t$: exactly the force a lumped
+$pA\mathbf{n}/3$ scheme applies, at every interior node. Positive $p$ inflates
+an outward-wound surface; the builder checks that the surface is a closed,
+consistently wound manifold enclosing a positive volume, and names the first
+offending edges when it is not.
+
+\paragraph{Open surfaces.} The cone volumes depend on where the origin is;
+their sum over a closed surface does not, and neither does the gradient at any
+node whose fan is closed. An open surface (a disk pinned at its rim, a cylinder
+between rigid rings) is therefore also a genuine potential provided every rim
+node is pinned: only the rim carries origin-dependent terms, and a pinned
+node's gradient never enters the equilibrium.
+
+\paragraph{One scalar per set.} The exactness at interior nodes holds only for
+a pressure that is uniform over the node's fan. With a per-triangle $p_t$ the
+sum $-\sum_t p_t V_t$ is no longer translation-invariant (measured: a change
+of $1.3\times10^{-13}$\,N under a translation for uniform $p$, $20.9$\,N for a
+per-triangle field), so its gradient is not a pressure force at all. The
+pressure therefore stays a parameter column, so a ramp runs on one solver
+build, but it is one scalar per element set: the builder refuses an array and
+the force diagnostic refuses a column that is not constant over each connected
+piece of the surface. Several cells at different pressures are several sets,
+one closed surface each; a rib shared by two cells appears in both with
+opposite windings and carries the net $p_{\text{left}}-p_{\text{right}}$, and
+at equal pressure an internal rib belongs in no pressure set at all.
+
+\paragraph{What this kernel is not.} A flow-dependent pressure distribution,
+the aerodynamic $\Delta p$ over a single skin, is non-uniform and has no
+potential. That load goes through \code{lumped\_pressure\_forces}, a NumPy
+helper that lumps $p_tA_t\mathbf{n}_t/3$ at the nodes, applied by the adapter
+as a dead load lagged by one coupling step, as drag is in the quasi-steady
+tether example. For uniform $p$ the lagged iteration and the potential share
+their fixed point, which \code{test\_pressure.py} checks. A fixed-mass gas law,
+$-p_0V_0\ln(V/V_0)$, is a function of the global volume rather than of one
+element and is not provided; an open ram inlet is a free boundary and not
+conservative.
+
+Three consequences for a solve. The triple product is odd under a reflection,
+so the mirrored half of a symmetric surface must be wound in reversed order
+(the ``even in each strain'' argument of the symmetry constraints does not
+apply; the orientation check catches a half copied without the flip). The
+solver's acceptance tolerance scales with the external forces only, so a
+pressure-only solve is judged at the absolute \code{force\_tolerance} against
+nodal pressure forces of order $pA/n_{\text{nodes}}$ and the tolerance must be
+scaled to match. And \code{StructuralSolution.strain\_energy} is the total
+element energy including $-pV$, so an inflated balloon reports a large
+negative number. Finally, the SVK membrane and its relaxed form both grow like
+$\lambda^4$ in a uniform stretch while $pV$ grows like $\lambda^3$, so the
+energy of an inflated balloon is bounded below and a one-shot solve is well
+posed; the limit-point instability of a neo-Hookean balloon is real physics
+this constitutive law cannot show.
+
 %======================================================================
 \section{Validation}
 \label{sec:validation}
@@ -723,9 +789,83 @@ configuration with zero out-of-plane stiffness --- the singular start that a
 residual-form Newton method has nothing to invert at.
 \end{itemize}
 
+\subsection{Inflated membranes}
+
+The uniform-pressure potential, checked against closed forms and a
+boundary-value solution (\code{validation/run\_pressure\_benchmarks.py}).
+
+\paragraph{Exact polyhedra.} For a vertex-transitive equilateral polyhedron
+(tetrahedron, octahedron, icosahedron) of SVK fabric, uniform scaling is the
+symmetric critical point of the discrete energy, and the stretch is the root of
+\begin{equation}
+  A_0\,tE\,\frac{\lambda^2-1}{1-\nu} = 3\,p\,V_0\,\lambda,
+\end{equation}
+with $A_0$ and $V_0$ the polyhedron's own area and volume. Free balloons, no
+node pinned, held only by the anchor: the solved radii about the centroid match
+$\lambda R_0$ to $4\times10^{-14}$.
+
+\paragraph{Balloon.} The continuum SVK sphere inflates by the $\lambda$ that
+makes
+$\Pi(\lambda) = \pi R_0^2 tE(\lambda^2-1)^2/(1-\nu) - \tfrac{4}{3}\pi pR_0^3\lambda^3$
+stationary, $\lambda^2 - a\lambda - 1 = 0$ with $a = pR_0(1-\nu)/(Et)$. An
+icosphere converges onto it at second order: relative errors
+$1.27\times10^{-3}$, $3.34\times10^{-4}$, $8.27\times10^{-5}$ and
+$2.05\times10^{-5}$ at subdivision levels 1--4 (80 to 5120 triangles), ratios
+3.81, 4.03, 4.05 per refinement. A pressure sweep of ten values runs on one
+solver build, well under a second, through the parameter column
+(Fig.~\ref{fig:pressure_balloon}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{pressure_balloon.png}
+\caption{SVK balloon under uniform pressure. Left: stretch against pressure on
+one solver build, against the closed form. Right: relative error against mean
+edge length at icosphere levels 1--4, with an $O(h^2)$ guide.}
+\label{fig:pressure_balloon}
+\end{figure}
+
+\paragraph{Hencky problem.} The F\"oppl--von K\'arm\'an clamped circular
+membrane under uniform pressure, solved here as a boundary-value problem with
+\code{solve\_bvp} at $\nu = 0.3$: $w_0/a = 0.65344\,(pa/Eh)^{1/3}$, with the
+radial stress resultant $N_r$ falling from $0.4311$ at the centre to $0.3330$
+at the rim in units of $Eh\,(pa/Eh)^{2/3}$. The textbook $0.662$ is the
+uncorrected series value. At $pa/Eh = 10^{-4}$ the CST disk converges onto the
+BVP from above, $2.8\times10^{-3}$, $9.2\times10^{-4}$ and $5.4\times10^{-4}$
+relative at 8, 16 and 24 rings, and the $N_r$ profile taken from the
+membrane's own Green strains lies on the BVP curve ($0.4312$ at the centre at
+24 rings). Beyond $pa/Eh \approx 10^{-3}$ the coefficient drifts upward with
+load: finite strain leaving the small-strain theory, not discretisation
+(Fig.~\ref{fig:pressure_hencky}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{pressure_hencky.png}
+\caption{Hencky problem. Left: the deflection coefficient against load at 16
+rings, with the BVP value and the uncorrected series value. Centre: refinement
+at $pa/Eh = 10^{-4}$. Right: radial stress resultant per triangle against the
+BVP profile.}
+\label{fig:pressure_hencky}
+\end{figure}
+
+\paragraph{Cylinder between rigid rings.} There is no clean closed form at
+finite length (an $O(R)$ membrane boundary layer at each ring), so this is a
+figure rather than an assertion: away from the ends the hoop stretch is the
+plane-strain form $\lambda_\theta^2 - 1 = 2pR(1-\nu^2)/(Et)$, matched to
+$1.7\times10^{-5}$ at mid-length for $L/R = 4$ and 8, with the boundary layer
+about $0.26R$ wide (Fig.~\ref{fig:pressure_cylinder}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{pressure_cylinder.png}
+\caption{Open cylinder between pinned rigid end rings under internal pressure:
+hoop stretch along the axis for $L/R = 4$ and 8 against the plane-strain
+closed form.}
+\label{fig:pressure_cylinder}
+\end{figure}
+
 \subsection{Test suite}
 
-86 tests, all passing, organised one file per concern:
+158 tests, all passing, organised one file per concern:
 
 \begin{table}[H]
 \centering
@@ -735,6 +875,7 @@ residual-form Newton method has nothing to invert at.
 \code{test\_cable.py} & Hooke parity with PSS, slack cut, pulley tension equalisation\\
 \code{test\_beam.py} & objectivity, $O(h^2)$ convergence, no locking, torsion vs $GJ$\\
 \code{test\_membrane.py} & analytic SVK, three wrinkling branches, inflation, scale\\
+\code{test\_pressure.py} & $-pV$ gradient vs lumped force, exact polyhedra, balloon $O(h^2)$, Hencky BVP, lagged load, ramp\\
 \code{test\_inflatable.py} & energy integrates the fitted moment; end-moment solves\\
 \code{test\_benchmarks.py} & roll-up vs exact circle, load-step independence, bend45\\
 \code{test\_energy.py} & mapped assembly vs a naive per-element sum; DOF layout\\
@@ -1491,6 +1632,34 @@ independent across a 37$\times$ range in degrees of freedom.}
 \label{fig:scaling}
 \end{figure}
 
+\subsection{Ram-air canopy}
+
+Six box cells side by side, top and bottom skins, leading- and trailing-edge
+closure walls and a rib on every cell boundary, on bridle lines to one tow
+point (\code{examples/run\_ramair\_demo.py}, Fig.~\ref{fig:ramair}). The
+internal pressure is one uniform gauge pressure over the outer envelope,
+applied as the potential $-pV$; the internal ribs see the same pressure on
+both faces, carry no net pressure load, and are plain membranes in no pressure
+set. The skins are cut 2\% oversize in span so they pillow between the ribs.
+Pressure alone has zero resultant, so a dead lift on the top skin stands in
+for the aerodynamic load and puts the bridles to work. Pressure and lift are
+ramped together from 60 to 300\,Pa on one solver build, each step warm-started
+from the last: 141, 18, 26, 14 and 6 iterations, every step converged with
+the acceptance tolerance scaled to the nodal pressure force. The box contracts
+in span by 17\% because the pillowing skins pull the outer ribs inward harder
+than the pressure on them pushes out, and the ribs read wrinkled throughout,
+which is what a membrane in uniaxial vertical tension is.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{ramair.png}
+\caption{Ram-air canopy under one uniform pressure. Left: the solved canopy
+at 300\,Pa coloured by membrane regime, bridles running to the tow point
+below. Right: canopy volume against reference and IPOPT iterations per ramp
+step.}
+\label{fig:ramair}
+\end{figure}
+
 %======================================================================
 \section{Comparison with \texorpdfstring{\code{kite\_fem}}{kite\_fem}}
 
@@ -1820,9 +1989,17 @@ Nodal forces are unaffected.
 torsion only; axial and shear stiffness must be supplied from tube geometry.
 
 \item[Dead loads.] Loads are frozen per solve, which matches a staggered
-coupling loop. A true follower pressure would not be conservative and could not
-be posed as a potential --- worth remembering before anyone tries to fold
-aerodynamics into the same minimisation.
+coupling loop. A uniform pressure on a closed or pinned-rim surface is
+conservative and is a potential ($-pV$); a flow-dependent, non-uniform pressure
+distribution is not and could not be posed as one, and goes through
+\code{lumped\_pressure\_forces} as a lagged dead load --- worth remembering
+before anyone tries to fold aerodynamics into the same minimisation.
+
+\item[Pressure is prescribed.] A fixed-mass gas law, $-p_0V_0\ln(V/V_0)$, is a
+function of the global volume rather than of one element and is not provided;
+an open ram inlet is a free boundary and not conservative, so inlets are
+modelled closed. A per-triangle pressure column is refused by the diagnostics
+but not checked inside the solve.
 
 \item[No contact.] Contact and self-contact are not modelled.
 
@@ -1858,6 +2035,9 @@ Full-kite table & \code{python scripts/structural/run\_full\_kite\_cost.py}\\
 Hanging-kite results, Tables & \code{python scripts/structural/run\_hanging\_validation.py}\\
 Stiffness scan & \code{python scripts/structural/run\_hanging\_stiffness\_scan.py}\\
 3D shape comparison & \code{python validation/run\_hanging\_shape\_comparison.py}\\
+Figs.~\ref{fig:pressure_balloon}--\ref{fig:pressure_cylinder}
+ & \code{python validation/run\_pressure\_benchmarks.py}\\
+Fig.~\ref{fig:ramair} & \code{python examples/run\_ramair\_demo.py}\\
 Hanging figures & \code{python scripts/structural/plot\_hanging\_validation.py}\\
 Generated \code{.tex} tables & \code{python scripts/structural/make\_hanging\_report.py}\\
 Test suite & \code{pytest tests/structural/}\\
@@ -1881,6 +2061,7 @@ Test suite & \code{pytest tests/structural/}\\
 \code{elements/beam.py} & \code{TimoshenkoBeamKernel}, \code{BeamSection}\\
 \code{elements/inflatable.py} & \code{InflatableTubeLaw}, \code{InflatableBeamKernel}\\
 \code{elements/membrane.py} & \code{MembraneKernel}, \code{membrane\_regimes}\\
+\code{elements/pressure.py} & \code{PressureKernel}, \code{pressure\_forces}, \code{lumped\_pressure\_forces}\\
 \bottomrule
 \end{tabular}
 \end{table}

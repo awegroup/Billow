@@ -96,14 +96,16 @@ stiff structures whose answer is already exact.
 | `TimoshenkoBeamKernel` | 2 | both | geometrically exact; reference strains make curved members stress-free |
 | `InflatableBeamKernel` | 2 | both | ASKITE tube fits **integrated into a strain energy**, not applied as a secant stiffness |
 | `MembraneKernel` | 3 | no | Pipkin relaxed energy — slack / wrinkled / taut resolved by the minimiser |
+| `PressureKernel` | 3 | no | uniform pressure as the potential `-pV` over a closed (or pinned-rim) surface; one scalar per set, a live parameter for ramps |
 
 ## Validation
 
 Every benchmark is measured against a reference **outside** this code — an exact
-solution, a boundary-value problem solved to 1e-12, or published values.
+solution, a boundary-value problem solved to at least 1e-8, or published values.
 
 ```sh
 python validation/run_validation_benchmarks.py      # elastica, roll-up, 45° bend, inflatable tube
+python validation/run_pressure_benchmarks.py        # inflated balloon, Hencky disk, pressurised cylinder
 python validation/run_hanging_validation.py         # the measured hanging V3 kite
 ```
 
@@ -113,6 +115,8 @@ python validation/run_hanging_validation.py         # the measured hanging V3 ki
 | Roll-up under M = 2πEI/L | exact closed circle | 1.13e-1 / 3.16e-2 / 8.14e-3 L at 10/20/40 elements — **O(h²)** |
 | Bathe & Bolourchi 45° bend | published tip displacement | within the spread between published values, 0.2% on the magnitude |
 | Inflatable tube, pure end moment | the fitted moment–curvature law | 0.06% in bending, 1.5% in torsion |
+| SVK balloon under uniform pressure | closed form `λ² − aλ − 1 = 0` | 1.27e-3 → 2.05e-5 at icosphere levels 1 → 4 — **O(h²)**; vertex-transitive polyhedra exact |
+| Hencky clamped disk | FvK membrane BVP, `w₀/a = 0.65344 (pa/Eh)^(1/3)` | 2.8e-3 → 5.4e-4 relative at 8 → 24 rings, `pa/Eh = 1e-4` |
 | Hanging V3 kite | stereoscopic marker measurement | see [`validation/data/hanging_validation/README.md`](validation/data/hanging_validation/README.md) |
 
 Installing the optional comparison code adds a `kite_fem` column to the beam
@@ -128,6 +132,7 @@ python examples/run_demo_cases.py --case sail         # batten-stiffened sail
 python examples/run_demo_cases.py --case canopy_model # spring net vs. wrinkling membrane
 python examples/run_demo_cases.py --case scaling      # cost against mesh size
 python examples/run_quasi_steady_tether.py           # a flying tether, and the catenary it rests on
+python examples/run_ramair_demo.py                   # a six-cell ram-air canopy under one uniform pressure
 ```
 
 ## Why it scales

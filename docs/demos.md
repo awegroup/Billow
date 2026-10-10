@@ -84,6 +84,8 @@ solve:
 | weight | dead nodal force | yes |
 | centrifugal term, `-m ω×(ω×r)` | one-node element kernel, `U = -½ m |ω×r|²`, with `ω` a live parameter | yes |
 | segment drag, `c |vₙ| vₙ` | dead load evaluated on the previous step's shape | lagged one step |
+| uniform pressure | potential `-pV` (3-node kernel, `p` a live parameter) — [`ramair`](#ramair-a-multi-cell-ram-air-canopy-under-one-uniform-pressure) | yes |
+| non-uniform pressure field | `lumped_pressure_forces` as a dead load on the previous shape | lagged one step |
 
 Drag is velocity-dependent and non-conservative, so no potential has it as
 gradient, and it cannot be folded into the energy. Applied one step lagged,
@@ -114,6 +116,51 @@ One warm step costs 4–7 ms here against 9 µs for the Julia shooting solver,
 which closes shape and loads in one three-unknown root-find. The port is not a
 faster tether; it is the same tether inside the formulation that also carries
 the bridle, the tube frame and the canopy.
+
+## `ramair` — a multi-cell ram-air canopy under one uniform pressure
+
+```sh
+python examples/run_ramair_demo.py
+```
+
+Six box cells side by side — top and bottom skins, leading- and trailing-edge
+closure walls, a rib on every cell boundary — on bridle lines to one tow point.
+The internal pressure is **one** uniform gauge pressure over the outer
+envelope, applied as the potential $-pV$ of `PressureKernel`
+(see [Element library](elements.md#uniform-pressure)); the internal ribs see the
+same pressure on both faces, carry no net pressure load, and are plain
+membranes in no pressure set. The skins are cut 2% oversize in span so they
+pillow between the ribs.
+
+Pressure alone has zero resultant, so every bridle would hang slack and the
+knots would be a mechanism; a dead lift on the top skin stands in for the
+aerodynamic load. The pressure is ramped from 60 to 300 Pa on one solver
+build through `with_param_column("pressure", ...)`, the lift ramped with it
+(both scale with the dynamic pressure, and a full lift on a barely inflated
+canopy crushes the cells):
+
+| pressure | iterations | residual | pillow at mid-cell | span / reference |
+|---|---|---|---|---|
+| 60 Pa | 141 | 2.8e-7 N | 126 mm | 0.835 |
+| 120 Pa | 18 | 1.7e-8 N | 128 mm | 0.830 |
+| 180 Pa | 26 | 7.4e-9 N | 128 mm | 0.827 |
+| 240 Pa | 14 | 3.7e-9 N | 129 mm | 0.826 |
+| 300 Pa | 6 | 2.3e-9 N | 129 mm | 0.826 |
+
+Every step converges with a `force_tolerance` scaled to the nodal pressure
+force (2.9e-6 N here), which the script states in a comment: the solver scales
+its acceptance with the external forces only. The first step pays for the
+singular flat start of every skin; after that each step is a warm restart.
+
+Two things the result shows that are physics rather than artefacts: the box
+contracts in span by 17% (so the total canopy volume *falls* slightly along
+the ramp, from 1.413 to 1.409 times the reference volume, because the lift
+ramps with the pressure
+and the contraction outweighs the pillowing), because the pillowing skins pull the outer ribs
+inward harder than the pressure on them pushes out and nothing else restrains
+the span; and the ribs read *wrinkled* throughout — a membrane under uniaxial
+vertical tension between the lifted top skin and the bridled bottom skin is a
+tension field, which is exactly what the relaxed law reports.
 
 ## Cost studies
 

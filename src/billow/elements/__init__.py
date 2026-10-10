@@ -46,6 +46,15 @@ from .membrane import (
     membrane_reference,
     membrane_regimes,
 )
+from .pressure import (
+    PressureKernel,
+    build_pressure_elements,
+    check_closed_surface,
+    enclosed_volume,
+    lumped_pressure_forces,
+    pressure_forces,
+    surface_boundary_nodes,
+)
 
 __all__ = [
     "ElementKernel",
@@ -71,4 +80,11 @@ __all__ = [
     "SLACK",
     "WRINKLED",
     "TAUT",
+    "PressureKernel",
+    "build_pressure_elements",
+    "pressure_forces",
+    "lumped_pressure_forces",
+    "enclosed_volume",
+    "check_closed_surface",
+    "surface_boundary_nodes",
 ]

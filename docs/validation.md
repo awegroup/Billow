@@ -1,12 +1,13 @@
 # Validation
 
 Every benchmark below is measured against a reference **outside this code** — an
-exact solution, a boundary-value problem solved to 1e-12, published values, or a
+exact solution, a boundary-value problem solved to at least 1e-8, published values, or a
 physical measurement. None is a stored regression of Billow's own output.
 
 ```sh
 python validation/run_validation_benchmarks.py            # all beam cases
 python validation/run_validation_benchmarks.py --case rollup --show
+python validation/run_pressure_benchmarks.py              # inflated membranes
 python validation/run_hanging_validation.py               # the measured kite
 python validation/run_hanging_shape_comparison.py         # its 3D shape vs the markers
 python validation/plot_hanging_validation.py              # the hanging-kite figures
@@ -26,6 +27,28 @@ circle, so the error is the gap between the tip and the root and there is
 nothing to look up. Convergence is second order and **independent of the load
 stepping**, which is the property that says the rotation handling is right
 rather than merely tuned.
+
+## Inflated membranes
+
+The uniform-pressure potential $-pV$ (see
+[Element library](elements.md#uniform-pressure)), checked against closed forms
+and a boundary-value solution:
+
+| benchmark | reference | Billow |
+|---|---|---|
+| Vertex-transitive polyhedra (tetrahedron, octahedron, icosahedron) | the symmetric critical point: uniform scaling, $A_0 t E (\lambda^2-1)/(1-\nu) = 3 p V_0 \lambda$ | exact, 4e-14 relative |
+| SVK balloon (icosphere) | continuum sphere, $\lambda^2 - a\lambda - 1 = 0$, $a = pR_0(1-\nu)/Et$ | 1.27e-3 / 3.34e-4 / 8.27e-5 / 2.05e-5 at levels 1–4 — **O(h²)** (ratios 3.81, 4.03, 4.05) |
+| Hencky clamped disk, $pa/Eh = 10^{-4}$ | Föppl–von Kármán membrane BVP (`solve_bvp`, $\nu = 0.3$): $w_0/a = 0.65344\,(pa/Eh)^{1/3}$ | 2.8e-3 / 9.2e-4 / 5.4e-4 relative at 8 / 16 / 24 rings, from above |
+| Hencky radial stress resultant | BVP: $N_r = 0.4311$ at the centre, $0.3330$ at the rim, $\times Eh\,(pa/Eh)^{2/3}$ | 0.4312 at the centre from the membrane's own Green strains, 24 rings |
+| Cylinder between rigid rings, $L/R = 4$ and 8 | plane-strain hoop stretch $\lambda_\theta^2 - 1 = 2pR(1-\nu^2)/Et$ away from the ends | 1.7e-5 relative at mid-length; a boundary layer of about $0.26\,R$ at each ring (a figure, not an assertion) |
+
+The textbook Hencky constant 0.662 is the uncorrected series value; the BVP is
+the reference here. The disk converges from above, and the Hencky coefficient
+drifts upward with $pa/Eh$ beyond about $10^{-3}$, where finite strain leaves
+the small-strain FvK theory rather than the discretisation.
+
+A balloon's pressure sweep runs on **one solver build**: `pressure` is a
+parameter column, changed through `with_param_column`.
 
 ## Comparison with an external code
 
@@ -69,6 +92,7 @@ Two things that comparison required, both worth knowing before running one:
 | `test_symmetry.py` | pairing and equalities; frames transported through junctions break mirror symmetry, `mirror_frames` restores it to roundoff |
 | `test_benchmarks.py` | roll-up vs the exact circle, Bathe & Bolourchi 45° bend |
 | `test_hanging_kite.py` | the measured-kite model builds, the length extractor reproduces the reference results exactly, and the shape fit recovers markers placed on the model's own surface |
+| `test_pressure.py` | enclosed volume and the $-pV$ gradient against the lumped $pA\mathbf{n}/3$ force; zero resultant and moment on a closed surface; origin dependence confined to the rim of an open one; polyhedra inflate by the exact discrete stretch; icosphere onto the SVK sphere at O(h²); pinned disk onto the Hencky BVP; the lagged lumped load reaches the potential's fixed point; a pressure ramp on one build |
 
 Tests assert against closed-form solutions and convergence orders, never against
 stored solver output. A test that pins today's numbers cannot tell you the

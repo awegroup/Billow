@@ -89,8 +89,14 @@ transported ones.
 ### Loads are dead per solve
 
 Which is exactly right for a staggered loop, and exactly wrong for anything that
-tries to fold the flow into the same minimisation — a follower pressure is not
-conservative and has no potential.
+tries to fold the flow into the same minimisation. The one pressure load that
+*is* a potential is a uniform one on a closed or pinned-rim surface — a ram-air
+cell's internal pressure, `build_pressure_elements`, one scalar per set. The
+aerodynamic pressure distribution over a skin is flow-dependent and non-uniform,
+has no potential, and takes the same route as drag: lump it with
+`lumped_pressure_forces(positions, triangles, pressure_per_triangle)` on the
+previous step's shape and apply it as a dead load. Never write it into a
+pressure set's column.
 
 ## What a coupled sweep looks like
 

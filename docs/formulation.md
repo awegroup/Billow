@@ -18,9 +18,18 @@ reports is the residual of the thing it minimised.
 !!! note "Loads are dead"
     Loads are frozen per solve. That matches a staggered coupling loop, where
     the flow solver supplies a load field and the structure answers with a
-    shape. A true follower pressure would not be conservative and could not be
-    posed as a potential at all — worth knowing before anyone tries to fold
-    aerodynamics into the same minimisation.
+    shape. A **uniform** pressure on a closed surface, or on an open one whose
+    rim is pinned, is conservative and *is* a potential — $-pV$, the
+    [pressure element](elements.md#uniform-pressure). A flow-dependent,
+    non-uniform pressure distribution is not, could not be posed as one, and
+    goes through `lumped_pressure_forces` as a lagged dead load — worth knowing
+    before anyone tries to fold aerodynamics into the same minimisation.
+
+!!! note "`strain_energy` is the total element energy"
+    `StructuralSolution.strain_energy` sums every element set, including the
+    load-like kernels — the pressure potential $-pV$, a centrifugal potential —
+    so on an inflated structure it is negative and large. The elastic part is
+    the membrane set's own energy.
 
 ## Degrees of freedom
 
@@ -156,5 +165,8 @@ increments, which are pseudovectors.
     `symmetry.mirror_frames` fixes it with one director-sign matrix
     $\mathbf{S}$ for every node, $\mathbf{R}_p = \mathbf{M}\mathbf{R}\mathbf{S}$.
     Each element's strains then map to a sign-flipped copy of its mirror
-    element's, and every kernel here is even in each strain component — **check
-    any new kernel for that evenness before relying on it.**
+    element's, and every strain-energy kernel here is even in each strain
+    component — **check any new kernel for that evenness before relying on
+    it.** The pressure kernel is the exception: its triple product is odd under
+    a reflection, so the mirrored half of a surface must be wound in reversed
+    order, which the orientation check in `build_pressure_elements` enforces.

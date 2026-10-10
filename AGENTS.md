@@ -12,7 +12,7 @@ Two fidelities, one formulation:
 | | elements | DOF |
 |---|---|---|
 | **wireframe** (`wireframe.py`) | cables, tension-only lines, pulleys | 3 per node |
-| **full** | the above + beams, inflatable tubes, wrinkling CST membranes | 3 per node, +3 on beam nodes only |
+| **full** | the above + beams, inflatable tubes, wrinkling CST membranes, uniform pressure on closed fabric | 3 per node, +3 on beam nodes only |
 
 The wireframe model is a *subset* of the full one, not a second code path. There
 is one cable force law in this package and both fidelities call it.
@@ -81,6 +81,11 @@ src/billow/
                   the ASKITE tube fits integrated into a strain energy
     membrane.py   MembraneKernel, green_strain, membrane_reference,
                   build_membrane_elements, membrane_regimes, SLACK/WRINKLED/TAUT
+    pressure.py   PressureKernel (U = -pV, one signed cone volume per outward
+                  triangle), build_pressure_elements, check_closed_surface,
+                  surface_boundary_nodes, enclosed_volume, pressure_forces,
+                  lumped_pressure_forces (the NumPy route for a NON-uniform
+                  field, applied by the adapter as a lagged dead load)
 
 tests/
   test_rotations.py  Cayley round trips and half-angle identity
@@ -105,6 +110,13 @@ tests/
                      recovers markers placed on the model's own surface
   test_catenary.py   a hanging chain of cables converges onto the analytic
                      catenary at O(h^2); segment tensions match at midpoints
+  test_pressure.py   enclosed volume and the -pV gradient against the lumped
+                     p A n / 3 force, zero resultant on a closed surface, rim
+                     origin-dependence on an open one; vertex-transitive
+                     polyhedra inflate by the exact discrete stretch; icosphere
+                     onto the SVK sphere at O(h^2); pinned disk onto the Hencky
+                     (FvK) BVP; lagged lumped load reaches the potential's
+                     fixed point; a pressure ramp on one solver build
 
 examples/           runnable figures and cost studies -> results/demo/
   run_demo_cases.py           wrinkling / canopy_model / cantilever / sail /
@@ -117,11 +129,20 @@ examples/           runnable figures and cost studies -> results/demo/
                               defined in the example), drag as a one-step
                               lagged dead load; the drag law stays in the
                               example, never in the package
+  run_ramair_demo.py          a six-cell ram-air box canopy on bridles: skins,
+                              ribs and closure walls as membranes, ONE uniform
+                              pressure over the outer envelope (internal ribs
+                              carry no net pressure and are in no pressure
+                              set), pressure and lift ramped on one build
 
 validation/         external references -> results/validation/, results/hanging/
   run_validation_benchmarks.py  elastica / rollup / bend45 / inflatable,
                                 optionally against kite_fem with matched
                                 properties
+  run_pressure_benchmarks.py    balloon (SVK sphere closed form, O(h^2)),
+                                hencky (FvK clamped disk solved as a BVP with
+                                solve_bvp), cylinder (plane-strain hoop
+                                stretch between rigid rings, as a figure)
   hanging_kite.py               the measured TU Delft V3, rebuilt as a Billow
                                 model from the reference assembled model
   run_hanging_validation.py, run_hanging_stiffness_scan.py,
@@ -183,7 +204,10 @@ parameter column (rest lengths, stiffnesses, section properties), loads, anchor.
 One `MinimumEnergySolver` build serves a whole sweep: actuation and stiffness
 ramps change parameters, never topology. `StructuralModel.replaced` and
 `ElementSet.with_param_column` are the supported way to do that, and
-`LineSystem` wraps them for line systems.
+`LineSystem` wraps them for line systems. The `pressure` column of a
+`PressureKernel` set is one of those parameters: ramp it with
+`with_param_column`, but keep it UNIFORM over the set (one scalar), because a
+per-triangle pressure is not a potential.
 
 ## Validation
 
@@ -197,6 +221,13 @@ removes a column, never an assertion.
 | Euler elastica, alpha up to 10 | exact BVP solution | 1e-4 to 1.1e-3 L at 40 el | 1.6e-2 to 5e-1 L |
 | Roll-up under M = 2 pi EI/L | exact closed circle | 1.13e-1 / 3.16e-2 / 8.14e-3 L at 10/20/40 el, O(h^2) | 5.9e-2 / 1.71e-1 / 2.32e-1 L, diverges with refinement |
 | Bathe and Bolourchi 45 degree bend | published tip displacement | within the spread between published values, 0.2% on the magnitude | out-of-plane component 47% low |
+| SVK balloon under uniform pressure | closed form `lambda^2 - a lambda - 1 = 0` | 1.27e-3 / 3.34e-4 / 8.27e-5 / 2.05e-5 at icosphere levels 1-4, O(h^2); vertex-transitive polyhedra exact to 4e-14 | - |
+| Hencky clamped disk, `pa/Eh = 1e-4` | FvK membrane BVP (`solve_bvp`), `w0/a = 0.65344 (pa/Eh)^(1/3)` | 2.8e-3 / 9.2e-4 / 5.4e-4 relative at 8/16/24 rings, from above; `N_r` profile on the BVP | - |
+
+Both membrane cases live in `validation/run_pressure_benchmarks.py`. The
+textbook Hencky constant 0.662 is the uncorrected series value; the BVP gives
+0.65344 at `nu = 0.3`, with `N_r` from 0.4311 at the centre to 0.3330 at the
+rim (times `Eh (pa/Eh)^(2/3)`).
 
 Two things that comparison required, both worth knowing:
 
@@ -256,6 +287,7 @@ stiffness are not covered by the fits and must be supplied from tube geometry.
 | `PulleyKernel` | 3 | no | `rest_length`, `stiffness` | `rest_length` is the **whole rope**, both arms |
 | `TimoshenkoBeamKernel` | 2 | both | `rest_length`, `ea/ga_2/ga_3/gj/ei_2/ei_3`, `gamma_0`, `omega_0` | 1-point integration; reference strains make curved members stress-free |
 | `MembraneKernel` | 3 | no | `area`, `thickness`, `youngs_modulus`, `poisson_ratio`, `d0inv_*` | Pipkin relaxed energy; `slack_stiffness_ratio` is required, see below |
+| `PressureKernel` | 3 | no | `pressure`, one scalar per set (`with_param_column` callers must keep it uniform) | `U = -pV` over an outward-wound closed surface, or an open one with every rim node pinned; `lumped_pressure_forces` is the route for a non-uniform field |
 
 **Fabric needs a residual slack stiffness.** A fully slack region stores exactly
 zero energy, so its Hessian block is exactly zero and IPOPT fails with
@@ -305,10 +337,35 @@ physics or the parameterisation, not bugs to be fixed.
   stiffness never show this, because it acts as a ground spring on every node.
   Read a stuck residual equal to some node's load as "this node has no load
   path", not as a conditioning problem.
-- **Loads are dead (frozen) per solve.** That matches a staggered coupling loop,
-  but a true follower pressure would not be conservative and could not be posed
-  as a potential — worth remembering before anyone tries to fold aerodynamics
-  into the same minimisation.
+- **Loads are dead (frozen) per solve.** That matches a staggered coupling loop.
+  A UNIFORM pressure on a closed surface, or on an open one whose rim is
+  pinned, is conservative and is a potential (`-pV`, `elements/pressure.py`);
+  a flow-dependent, non-uniform pressure distribution is not, and could not be
+  posed as one -- it goes through `lumped_pressure_forces` as a lagged dead
+  load on the adapter side. Worth remembering before anyone tries to fold
+  aerodynamics into the same minimisation.
+- **Per-triangle pressure is not a potential.** `-sum_t p_t V_t` is
+  translation-invariant only for uniform `p` over a node's fan (measured:
+  1.3e-13 N change under a translation for uniform `p`, 20.9 N per-triangle),
+  so its gradient is not a pressure force. The builder takes one scalar and
+  `pressure_forces` refuses a non-uniform column; nothing inside the solve
+  checks it. Several pressures are several sets, one closed surface each.
+- **Rim nodes of an open pressure surface see the origin.** Only a node with a
+  closed fan has an origin-independent gradient. `closed=False` is a potential
+  exactly when every node of `surface_boundary_nodes` is pinned.
+- **The pressure kernel is odd under a mirror.** The triple product changes
+  sign under an improper `M`, so the mirrored half of a symmetric canopy must
+  be wound in REVERSED order to stay outward; the "even in each strain"
+  argument does not apply, and `check_closed_surface` catches a half copied
+  without the flip as inconsistently wound.
+- **Pressure is not in `load_scale`.** The solver scales its acceptance with the
+  external `forces` only; a pressure-only solve is judged at the absolute
+  `force_tolerance` (1e-6 N) against nodal pressure forces of order
+  `p A / n_nodes`, and under `move_limit` the residual-only verdict then makes
+  `converged` unreachable. Pass a `force_tolerance` scaled to `p A / n_nodes`.
+- **`StructuralSolution.strain_energy` includes `-pV`.** It is the total element
+  energy, so an inflated balloon reports a large negative number; the elastic
+  part is the membrane set's own.
 - **Applied moments need load stepping, and are exact only about a fixed axis.**
   The rotation DOF are Rodrigues vectors, whose chart is singular at a rotation
   of pi, so a node cannot be asked to turn most of the way round inside a single
@@ -363,6 +420,11 @@ physics or the parameterisation, not bugs to be fixed.
 - Contact and self-contact are not modelled.
 - `PotentialEnergy(parallelization=...)` exposes CasADi threaded maps; untested
   at scale, serial is the default.
+- Pressure is a prescribed gauge value. A fixed-mass gas law
+  (`-p0 V0 ln(V/V0)`) is a function of the global volume, not of one element,
+  and is not provided; an open ram inlet is a free boundary and not
+  conservative, so inlets are modelled closed. A single skin under an
+  aerodynamic `dp` is the adapter's job, through `lumped_pressure_forces`.
 
 ## Physics references
 
