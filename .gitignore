@@ -47,6 +47,7 @@ docs/**/*.log
 .idea/
 .DS_Store
 
-# Claude Code agent config (not version-controlled)
-/CLAUDE.md
+# Agent instructions and config (kept local, not version-controlled)
+AGENTS.md
+CLAUDE.md
 .claude/
