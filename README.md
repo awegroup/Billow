@@ -185,7 +185,21 @@ The governing equations trace back to:
   Bisshopp & Drucker (1945) *Q. Appl. Math.* **3**, 272–275.
 - **Aerostructural context:** Cayon, Gaunaa & Schmehl (2023) *Energies* **16**, 3061.
 
+## Acknowledgement
+
+This work was supported by the European Union's Horizon Europe programme
+(Climate, Energy and Mobility) through the MERIDIONAL project, grant agreement
+No. 101084216.
+
 ## Licence
+
+Technische Universiteit Delft hereby disclaims all copyright interest in the
+program “Billow” (a minimum-energy structural solver for soft, inflatable
+structures) written by the Author(s).
+
+Prof. H.G.C. (Henri) Werij, Dean of Aerospace Engineering
+
+Copyright © 2023–2026 Oriol Cayon
 
 Apache-2.0 — see [LICENSE](LICENSE). Portions derive from
 [ASKITE](https://github.com/awegroup/ASKITE) (MIT) and the validation data is
