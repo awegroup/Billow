@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2026 Oriol Cayon, Delft University of Technology
+# Copyright (c) 2023-2026 Oriol Cayon
 #
 # SPDX-License-Identifier: Apache-2.0
 
