@@ -189,7 +189,7 @@ The governing equations trace back to:
 
 This work was supported by the European Union's Horizon Europe programme
 (Climate, Energy and Mobility) through the MERIDIONAL project, grant agreement
-No. 101084216.
+No. [101084216](https://cordis.europa.eu/project/id/101084216).
 
 ## Licence
 
